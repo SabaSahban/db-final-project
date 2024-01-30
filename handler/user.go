@@ -82,9 +82,6 @@ func LoginUser(c echo.Context, db *sql.DB) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid password"})
 	}
 
-	// Set the user ID in the context
-	c.Set("user_id", userID)
-
 	return c.String(http.StatusOK, "Login successful")
 }
 
