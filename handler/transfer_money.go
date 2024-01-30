@@ -27,7 +27,7 @@ func TransferMoney(c echo.Context, db *sql.DB, transferType string) error {
 	amount := requestData.Amount
 
 	// Perform the money transfer based on the transferType
-	err := transferMoney(db, sourceCardNumber, destinationCardNumber, amount)
+	err := transferMoney(db, sourceCardNumber, destinationCardNumber, amount, transferType)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Money transfer failed", "error": err.Error()})
 	}
@@ -35,19 +35,22 @@ func TransferMoney(c echo.Context, db *sql.DB, transferType string) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "Money transferred successfully"})
 }
 
+// Modify the TransferMoneyCardToCard function
 func TransferMoneyCardToCard(c echo.Context, db *sql.DB) error {
 	return TransferMoney(c, db, "CardToCard")
 }
 
+// Modify the TransferMoneySATNA function
 func TransferMoneySATNA(c echo.Context, db *sql.DB) error {
 	return TransferMoney(c, db, "SATNA")
 }
 
+// Modify the TransferMoneyPAYA function
 func TransferMoneyPAYA(c echo.Context, db *sql.DB) error {
 	return TransferMoney(c, db, "PAYA")
 }
 
-func transferMoney(db *sql.DB, sourceCardNumber, destinationCardNumber string, amount float64) error {
+func transferMoney(db *sql.DB, sourceCardNumber, destinationCardNumber string, amount float64, transferType string) error {
 	// Check if the source and destination card numbers are valid
 	var sourceAccountID, destinationAccountID int
 
@@ -106,12 +109,12 @@ func transferMoney(db *sql.DB, sourceCardNumber, destinationCardNumber string, a
 	// Generate a tracking code for the transaction (you may use a different method)
 	trackingCode := util.GenerateTrackingCode()
 
-	// Insert the transaction record into the transactions table
+	// Insert the transaction record into the transactions table with the correct transfer_type
 	insertTransactionQuery := `
         INSERT INTO transactions (source_account_id, destination_account_id, amount, transfer_type, tracking_code, status)
         VALUES (?, ?, ?, ?, ?, ?)
     `
-	_, err = tx.Exec(insertTransactionQuery, sourceAccountID, destinationAccountID, amount, "CardToCard", trackingCode, 1)
+	_, err = tx.Exec(insertTransactionQuery, sourceAccountID, destinationAccountID, amount, transferType, trackingCode, 1)
 	if err != nil {
 		tx.Rollback()
 		return err
