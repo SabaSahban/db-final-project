@@ -14,7 +14,7 @@ func ConnectToDatabase() (*sql.DB, error) {
 		dbname   = "your_db_name"
 	)
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", username, password, hostname, dbname)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:3307)/%s", username, password, hostname, dbname)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -62,6 +62,22 @@ func CreateTables(db *sql.DB) {
             FOREIGN KEY (source_account_id) REFERENCES accounts(account_id),
             FOREIGN KEY (destination_account_id) REFERENCES accounts(account_id)
         )`,
+
+		`CREATE TABLE IF NOT EXISTS balance_change_log (
+ 			log_id INT AUTO_INCREMENT PRIMARY KEY,
+ 			account_id INT NOT NULL,
+ 			old_balance DECIMAL(12, 2) NOT NULL,
+ 			new_balance DECIMAL(12, 2) NOT NULL,
+ 			change_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ 			FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+			)`,
+
+		`CREATE TRIGGER IF NOT EXISTS balance_change_trigger BEFORE UPDATE ON accounts
+       FOR EACH ROW
+       BEGIN
+           INSERT INTO balance_change_log (account_id, old_balance, new_balance)
+           VALUES (OLD.account_id, OLD.balance, NEW.balance);
+       END;`,
 	}
 
 	for _, statement := range statements {

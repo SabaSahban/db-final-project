@@ -68,12 +68,15 @@
 </head>
 <body>
 
-<div class="navbar">
-  <a href="./index.html">Home</a>
-  <a href="./transaction.html">New Transaction</a>
-  <a href="./login.html">Login</a>
-  <a href="./register.html">Register</a>
-</div>
+    <div class="navbar">
+        <a href="./index.html">Home</a>
+        <a href="./create_account.html">New Account</a>
+        <a href="./transaction.html">New Transaction</a>
+        <a href="./transaction_list.html">Transaction List</a>
+        <a href="./transaction_status.html">Transaction Status</a>
+        <a href="./login.html">Login</a>
+        <a href="./register.html">Register</a>
+      </div>
 
 <div class="register-container">
   <input type="text" id="firstName" placeholder="First Name" required>
@@ -82,6 +85,8 @@
   <input type="password" id="password" placeholder="Password" required>
   <input type="text" id="nationalId" placeholder="National ID" required>
   <input type="submit" value="Register" id="registerBtn">
+  <div id="status-details"></div>
+  <div id="error-message"></div>
   <div class="register-btn">
     <p>Have an Account?</p>
     <button onclick="location.href='./login.html';">Login Here</button>
@@ -113,14 +118,18 @@
       body: raw,
       redirect: 'follow'
     };
-
+    var message = document.getElementById("status-details");
     fetch("http://localhost:8080/register", requestOptions)
       .then(response => response.text())
-      .then(result => {
-        console.log(result);
-        // Handle response here (e.g., redirect user, display message)
+      .then(result => {  
+          message.innerHTML = result ; // Display error message
+        
       })
-      .catch(error => console.log('error', error));
+      .catch(error => {console.log('error', error)
+      message.innerHTML = error ; // Display error message
+
+    });
+      
   });
 </script>
 
