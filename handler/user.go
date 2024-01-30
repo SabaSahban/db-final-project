@@ -63,10 +63,12 @@ func LoginUser(c echo.Context, db *sql.DB) error {
 		return err
 	}
 
-	// Check if the username exists in the database
+	// Check if the username exists in the database and retrieve the user ID
+	var userID int
 	var storedPasswordHash string
-	query := "SELECT password_hash FROM users WHERE username = ?"
-	err := db.QueryRow(query, loginReq.Username).Scan(&storedPasswordHash)
+
+	query := "SELECT user_id, password_hash FROM users WHERE username = ?"
+	err := db.QueryRow(query, loginReq.Username).Scan(&userID, &storedPasswordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Username not found"})
@@ -79,6 +81,9 @@ func LoginUser(c echo.Context, db *sql.DB) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid password"})
 	}
+
+	// Set the user ID in the context
+	c.Set("user_id", userID)
 
 	return c.String(http.StatusOK, "Login successful")
 }
