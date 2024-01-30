@@ -17,7 +17,7 @@ type Transaction struct {
 	DestinationAccountID int
 	Amount               float64
 	TransferType         string
-	TransactionTimeStr   string // Store transaction_time as string
+	TransactionTime      time.Time
 	TrackingCode         string
 	Status               int
 }
@@ -269,17 +269,17 @@ func RetrieveLastNTransactions(db *sql.DB, accountIdentifier string, n int) ([]T
 	defer rows.Close()
 
 	var transactions []Transaction
-	var transactionTimeStr string // Temporary variable to hold transaction_time as string
 
 	for rows.Next() {
 		var transaction Transaction
+		var transactionTimeStr string // Temporary variable to hold transaction_time as string
 		err := rows.Scan(
 			&transaction.TransactionID,
 			&transaction.SourceAccountID,
 			&transaction.DestinationAccountID,
 			&transaction.Amount,
 			&transaction.TransferType,
-			&transactionTimeStr,
+			&transactionTimeStr, // Scan transaction_time as string
 			&transaction.TrackingCode,
 			&transaction.Status,
 		)
@@ -287,7 +287,7 @@ func RetrieveLastNTransactions(db *sql.DB, accountIdentifier string, n int) ([]T
 			return nil, err
 		}
 
-		// Convert transaction_timeStr to time.Time
+		// Convert transactionTimeStr to time.Time
 		transaction.TransactionTime, err = time.Parse("2006-01-02 15:04:05", transactionTimeStr)
 		if err != nil {
 			return nil, err
@@ -307,13 +307,14 @@ func VerifyTransaction(db *sql.DB, trackingCode string) (Transaction, error) {
 		WHERE tracking_code = ?
 	`
 	var transaction Transaction
+	var transactionTimeStr string // Temporary variable to hold transaction_time as string
 	err := db.QueryRow(query, trackingCode).Scan(
 		&transaction.TransactionID,
 		&transaction.SourceAccountID,
 		&transaction.DestinationAccountID,
 		&transaction.Amount,
 		&transaction.TransferType,
-		&transaction.TransactionTime,
+		&transactionTimeStr, // Scan transaction_time as string
 		&transaction.TrackingCode,
 		&transaction.Status,
 	)
@@ -323,6 +324,13 @@ func VerifyTransaction(db *sql.DB, trackingCode string) (Transaction, error) {
 		}
 		return Transaction{}, err
 	}
+
+	// Parse transactionTimeStr into transaction.TransactionTime
+	parsedTime, err := time.Parse("2006-01-02 15:04:05", transactionTimeStr)
+	if err != nil {
+		return Transaction{}, err
+	}
+	transaction.TransactionTime = parsedTime
 
 	return transaction, nil
 }
