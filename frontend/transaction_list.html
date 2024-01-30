@@ -109,8 +109,9 @@
           var transactionDiv = document.createElement("div");
           transactionDiv.innerHTML = `
             <p>Transaction ID: ${transaction.transaction_id}</p>
+            <p>Tracking Code: ${transaction.tracking_code}</p>
             <p>Transaction Time: ${transaction.transaction_time}</p>
-            <p>Status Code: ${transaction.status_code}</p>
+            <p>Status Code: ${transaction.status}</p>
             <p>Transfer Type: ${transaction.transfer_type}</p>
             <p>Amount: ${transaction.amount}</p>
             <p>Destination Account ID: ${transaction.destination_account_id}</p>
