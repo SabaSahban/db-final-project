@@ -7,24 +7,20 @@ import (
 )
 
 func ConnectToDatabase() (*sql.DB, error) {
-	// Configure the database connection (always check and edit this part)
 	const (
 		username = "root"
-		password = "" // replace with your password (if you've set one)
-		hostname = "127.0.0.1:3306"
-		dbname   = "your_db_name" // replace with your storage name
+		password = "yourpassword"
+		hostname = "127.0.0.1"
+		dbname   = "your_db_name"
 	)
 
-	// Build the DSN (Data Source Name)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, hostname, dbname)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", username, password, hostname, dbname)
 
-	// Open a connection to the database
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	// Ping the database to verify the connection
 	err = db.Ping()
 	if err != nil {
 		return nil, err
@@ -35,7 +31,6 @@ func ConnectToDatabase() (*sql.DB, error) {
 }
 
 func CreateTables(db *sql.DB) {
-	// Create tables if they do not exist
 	statements := []string{
 		`CREATE TABLE IF NOT EXISTS users (
             user_id INT AUTO_INCREMENT PRIMARY KEY,

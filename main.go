@@ -7,9 +7,14 @@ import (
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	e := echo.New()
+	e.Use(middleware.Logger())
+
 	db, err := storage.ConnectToDatabase()
 	if err != nil {
 		log.Fatal(err)
@@ -18,215 +23,40 @@ func main() {
 
 	storage.CreateTables(db)
 
-	// Menu for user interactions
-	for {
-		fmt.Println("1. User login")
-		fmt.Println("2. Register new user")
-		fmt.Println("3. Create new account")
-		fmt.Println("4. Money transfer via card to card")
-		fmt.Println("5. Money transfer via SATNA")
-		fmt.Println("6. Money transfer via PAYA")
-		fmt.Println("7. Retrieve last n transactions of an account")
-		fmt.Println("8. Verify transaction with tracking code")
-		fmt.Println("9. Exit")
-		var choice int
-		fmt.Print("Enter your choice: ")
-		fmt.Scanln(&choice)
+	// Define HTTP endpoints
+	e.POST("/register", func(c echo.Context) error {
+		return handler.RegisterNewUser(c, db)
+	})
 
-		switch choice {
-		case 1:
-			// User login
-			err := handler.LoginUser(db)
-			if err != nil {
-				log.Println("Login failed. Error:", err)
-			} else {
-				fmt.Println("Login successful!")
-			}
+	e.POST("/login", func(c echo.Context) error {
+		return handler.LoginUser(c, db)
+	})
 
-		case 2:
-			// Register new user
-			err := handler.RegisterNewUser(db)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Registration successful!")
-			}
-		case 3:
-			// Create new account
-			err := handler.CreateNewAccount(db)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Account created successfully!")
-			}
+	e.POST("/create-account", func(c echo.Context) error {
+		return handler.CreateNewAccount(c, db)
+	})
 
-		case 4:
-			// Money transfer via card to card
-			fmt.Print("Enter source card number: ")
-			var sourceCardNumber string
-			_, err := fmt.Scanln(&sourceCardNumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
+	e.POST("/transfer-card-to-card", func(c echo.Context) error {
+		return handler.TransferMoneyCardToCard(c, db)
+	})
 
-			fmt.Print("Enter destination card number: ")
-			var destinationCardNumber string
-			_, err = fmt.Scanln(&destinationCardNumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
+	e.POST("/transfer-satna", func(c echo.Context) error {
+		return handler.TransferMoneySATNA(c, db)
+	})
 
-			fmt.Print("Enter transfer amount: ")
-			var amount float64
-			_, err = fmt.Scanln(&amount)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
+	e.POST("/transfer-paya", func(c echo.Context) error {
+		return handler.TransferMoneyPAYA(c, db)
+	})
 
-			err = handler.TransferMoneyCardToCard(db, sourceCardNumber, destinationCardNumber, amount)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Money transferred successfully!")
-			}
+	e.GET("/transactions/:accountIdentifier/:n", func(c echo.Context) error {
+		return handler.RetrieveLastNTransactions(c, db)
+	})
 
-		case 5:
-			// Money transfer via SATNA
-			fmt.Print("Enter source card number: ")
-			var sourceCardNumber string
-			_, err := fmt.Scanln(&sourceCardNumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
+	e.GET("/verify-transaction/:trackingCode", func(c echo.Context) error {
+		return handler.VerifyTransaction(c, db)
+	})
 
-			fmt.Print("Enter destination SHEBA number: ")
-			var destinationSHEBANumber string
-			_, err = fmt.Scanln(&destinationSHEBANumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			fmt.Print("Enter transfer amount: ")
-			var amount float64
-			_, err = fmt.Scanln(&amount)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			err = handler.TransferMoneySATNA(db, sourceCardNumber, destinationSHEBANumber, amount)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Money transferred successfully!")
-			}
-
-		case 6:
-			// Money transfer via PAYA
-			fmt.Print("Enter source card number: ")
-			var sourceCardNumber string
-			_, err := fmt.Scanln(&sourceCardNumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			fmt.Print("Enter destination SHEBA number: ")
-			var destinationSHEBANumber string
-			_, err = fmt.Scanln(&destinationSHEBANumber)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			fmt.Print("Enter transfer amount: ")
-			var amount float64
-			_, err = fmt.Scanln(&amount)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			err = handler.TransferMoneyPAYA(db, sourceCardNumber, destinationSHEBANumber, amount)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Money transferred successfully!")
-			}
-
-		case 7:
-			// Retrieve last n transactions of an account
-			fmt.Print("Enter account identifier (card number or SHEBA number): ")
-			var accountIdentifier string
-			_, err := fmt.Scanln(&accountIdentifier)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			fmt.Print("Enter the number of transactions to retrieve: ")
-			var n int
-			_, err = fmt.Scanln(&n)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			transactions, err := handler.RetrieveLastNTransactions(db, accountIdentifier, n)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Last", n, "transactions for account", accountIdentifier, ":")
-				for _, transaction := range transactions {
-					fmt.Printf("Transaction ID: %d\n", transaction.TransactionID)
-					fmt.Printf("Source Account ID: %d\n", transaction.SourceAccountID)
-					fmt.Printf("Destination Account ID: %d\n", transaction.DestinationAccountID)
-					fmt.Printf("Amount: %.2f\n", transaction.Amount)
-					fmt.Printf("Transfer Type: %s\n", transaction.TransferType)
-					fmt.Printf("Transaction Time: %s\n", transaction.TransactionTime)
-					fmt.Printf("Tracking Code: %s\n", transaction.TrackingCode)
-					fmt.Printf("Status: %d\n", transaction.Status)
-					fmt.Println("------------------------")
-				}
-			}
-
-		case 8:
-			// Verify transaction with tracking code
-			fmt.Print("Enter tracking code: ")
-			var trackingCode string
-			_, err := fmt.Scanln(&trackingCode)
-			if err != nil {
-				log.Println("Error:", err)
-				break
-			}
-
-			transaction, err := handler.VerifyTransaction(db, trackingCode)
-			if err != nil {
-				log.Println("Error:", err)
-			} else {
-				fmt.Println("Transaction details for tracking code", trackingCode, ":")
-				fmt.Printf("Transaction ID: %d\n", transaction.TransactionID)
-				fmt.Printf("Source Account ID: %d\n", transaction.SourceAccountID)
-				fmt.Printf("Destination Account ID: %d\n", transaction.DestinationAccountID)
-				fmt.Printf("Amount: %.2f\n", transaction.Amount)
-				fmt.Printf("Transfer Type: %s\n", transaction.TransferType)
-				fmt.Printf("Transaction Time: %s\n", transaction.TransactionTime)
-				fmt.Printf("Tracking Code: %s\n", transaction.TrackingCode)
-				fmt.Printf("Status: %d\n", transaction.Status)
-			}
-
-		case 9:
-			// Exit the program
-			fmt.Println("Exiting program...")
-			return
-
-		default:
-			fmt.Println("Invalid choice. Please select a valid option.")
-		}
-	}
+	port := ":8080"
+	fmt.Printf("Server is running on port %s...\n", port)
+	e.Logger.Fatal(e.Start(port))
 }

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background-color: #333;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .navbar a {
+      float: left;
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 20px;
+      text-decoration: none;
+    }
+
+    .navbar a:hover {
+      background-color: #ddd;
+      color: black;
+    }
+
+    .register-container {
+      max-width: 40rem;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin: auto;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="submit"] {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    input[type="submit"] {
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+
+    .register-btn {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <a href="./index.html">Home</a>
+  <a href="./transaction.html">New Transaction</a>
+  <a href="./login.html">Login</a>
+  <a href="./register.html">Register</a>
+</div>
+
+<div class="register-container">
+  <input type="text" id="firstName" placeholder="First Name" required>
+  <input type="text" id="lastName" placeholder="Last Name" required>
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <input type="text" id="nationalId" placeholder="National ID" required>
+  <input type="submit" value="Register" id="registerBtn">
+  <div class="register-btn">
+    <p>Have an Account?</p>
+    <button onclick="location.href='./login.html';">Login Here</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById("registerBtn").addEventListener("click", function() {
+    var firstName = document.getElementById("firstName").value;
+    var lastName = document.getElementById("lastName").value;
+    var username = document.getElementById("username").value;
+    var password = document.getElementById("password").value;
+    var nationalId = document.getElementById("nationalId").value;
+
+    var raw = JSON.stringify({
+      "first_name": firstName,
+      "last_name": lastName,
+      "username": username,
+      "password": password,
+      "national_id": nationalId
+    });
+
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    var requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: raw,
+      redirect: 'follow'
+    };
+
+    fetch("http://localhost:8000/api/auth/register/", requestOptions)
+      .then(response => response.text())
+      .then(result => {
+        console.log(result);
+        // Handle response here (e.g., redirect user, display message)
+      })
+      .catch(error => console.log('error', error));
+  });
+</script>
+
+</body>
+</html>
