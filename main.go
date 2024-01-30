@@ -15,6 +15,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 
+	// Enable CORS middleware
+	e.Use(middleware.CORS())
+
 	db, err := storage.ConnectToDatabase()
 	if err != nil {
 		log.Fatal(err)
