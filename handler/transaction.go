@@ -4,7 +4,6 @@ package handler
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,59 +22,35 @@ type Transaction struct {
 	Status               int       `json:"status"`
 }
 
-func validateAccountIdentifiers(db *sql.DB, sourceIdentifier, destinationIdentifier, transferType string) error {
-	var sourceAccountID, destinationAccountID int
-	var sourceColumnName, destinationColumnName string
-
-	//if transferType == "CardToCard" {
-	//	sourceColumnName = "card_number"
-	//	destinationColumnName = "card_number"
-	//} else if transferType == "SATNA" || transferType == "PAYA" {
-	//	sourceColumnName = "card_number"
-	//	destinationColumnName = "sheba_number"
-	//} else {
-	//	return fmt.Errorf("Invalid transfer type")
-	//}
-
-	sourceQuery := "SELECT account_id FROM accounts WHERE " + sourceColumnName + " = ?"
-	err := db.QueryRow(sourceQuery, sourceIdentifier).Scan(&sourceAccountID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("Source account not found")
-		}
-		return err
-	}
-
-	destinationQuery := "SELECT account_id FROM accounts WHERE " + destinationColumnName + " = ?"
-	err = db.QueryRow(destinationQuery, destinationIdentifier).Scan(&destinationAccountID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("Destination account not found")
-		}
-		return err
-	}
-
-	return nil
-}
-
 func RetrieveLastNTransactions(c echo.Context, db *sql.DB) error {
-	// Parse the account identifier and n from the request
-	accountIDStr := c.Param("accountIdentifier")
+	// Parse the account identifier (SHEBA or card number) and n from the request
+	accountIdentifier := c.Param("accountIdentifier")
 	nStr := c.Param("n")
 
-	// Convert n and accountID to integers
+	// Convert n to an integer
 	n, err := strconv.Atoi(nStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for n"})
 	}
-	accountID, err := strconv.Atoi(accountIDStr)
+
+	// Retrieve the user's account ID based on SHEBA or card number
+	var accountID int
+	query := `
+		SELECT account_id
+		FROM accounts
+		WHERE sheba_number = ? OR card_number = ?
+	`
+	err = db.QueryRow(query, accountIdentifier, accountIdentifier).Scan(&accountID)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid value for accountIdentifier"})
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "Account not found"})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to retrieve account"})
 	}
 
 	// Retrieve the last n transactions for the account by account ID
 	var transactions []Transaction
-	query := `
+	query = `
 		SELECT transaction_id, source_account_id, destination_account_id, amount, transfer_type, transaction_time, tracking_code, status
 		FROM transactions
 		WHERE source_account_id = ? OR destination_account_id = ?

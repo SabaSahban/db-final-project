@@ -72,12 +72,16 @@ func CreateTables(db *sql.DB) {
  			FOREIGN KEY (account_id) REFERENCES accounts(account_id)
 			)`,
 
-		`CREATE TRIGGER IF NOT EXISTS balance_change_trigger BEFORE UPDATE ON accounts
-       FOR EACH ROW
-       BEGIN
-           INSERT INTO balance_change_log (account_id, old_balance, new_balance)
-           VALUES (OLD.account_id, OLD.balance, NEW.balance);
-       END;`,
+		`CREATE TABLE IF NOT EXISTS user_daily_transaction_sum (
+			user_id INT NOT NULL,
+			account_id INT NOT NULL,
+			transaction_date DATE NOT NULL,
+			transfer_type ENUM('CardToCard', 'SATNA', 'PAYA') NOT NULL,
+			transaction_sum DECIMAL(12, 2) DEFAULT 0.00,
+			PRIMARY KEY (user_id, account_id, transaction_date, transfer_type),
+			FOREIGN KEY (user_id) REFERENCES users(user_id),
+			FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+			)`,
 	}
 
 	for _, statement := range statements {
